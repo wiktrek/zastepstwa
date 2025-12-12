@@ -25,7 +25,8 @@ from src.assets.ascii import ascii
 from src.commands import (
 	informacje,
 	skonfiguruj,
-	statystyki
+	statystyki,
+	numerki
 )
 from src.events import (
 	join,
@@ -154,5 +155,6 @@ bot = Zastępstwa(intents=intents)
 informacje.ustaw(bot)
 skonfiguruj.ustaw(bot)
 statystyki.ustaw(bot)
+numerki.ustaw(bot)
 join.ustaw(bot)
 remove.ustaw(bot)

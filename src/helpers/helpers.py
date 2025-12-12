@@ -452,3 +452,21 @@ def pobierzListęKlas(szkoła: str | None=None) -> list[str]:
 		return suroweDane
 
 	return []
+
+def pobierzSzczęśliweNumerkiNaDzień(szkoła: str, dzień: str) -> list[int]:
+	"""
+	Pobiera szczęśliwe numerki dla danej szkoły w danym dniu
+
+	Args:
+		szkoła (str): Szkołą, dla której pobieramy szczęśliwy numerek
+	
+	Returns:
+		list[int]: lista szczęśliwych numerków
+	"""	
+	suroweDane = (konfiguracja.get("szkoły", {})).get(szkoła, {}).get("szczęśliwe-numerki", {})
+	if (dzień not in suroweDane):
+		return []
+	
+	if (len(suroweDane[dzień]) != 0):
+		return suroweDane[dzień]
+	return []
