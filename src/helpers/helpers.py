@@ -220,6 +220,9 @@ def pobierzSłownikSerwera(identyfikatorSerwera: str) -> dict[str, Any]:
 	if not isinstance(dane.get("wybrani-nauczyciele"), list):
 		dane["wybrani-nauczyciele"] = []
 
+	if "wysyłaj-numerki" not in dane:
+		dane["wysyłaj-numerki"] = False
+
 	serwery[identyfikatorSerwera] = dane
 	return dane
 
@@ -300,7 +303,10 @@ async def zapiszKluczeSerwera(
 
 			if wartość:
 				daneSerwera["szkoła"] = wartość
-
+		
+		if "wysyłaj-numerki" in lokalneDane:
+			wartość = lokalneDane.pop("wysyłaj-numerki", False)         
+			daneSerwera["wysyłaj-numerki"] = bool(wartość)
 		for klucz, wartość in lokalneDane.items():
 			if wartość:
 				daneSerwera[klucz] = wartość
@@ -459,14 +465,31 @@ def pobierzSzczęśliweNumerkiNaDzień(szkoła: str, dzień: str) -> list[int]:
 
 	Args:
 		szkoła (str): Szkołą, dla której pobieramy szczęśliwy numerek
+		dzień (str): dzień w formacie DD.MM
 	
 	Returns:
 		list[int]: lista szczęśliwych numerków
 	"""	
 	suroweDane = (konfiguracja.get("szkoły", {})).get(szkoła, {}).get("szczęśliwe-numerki", {})
+	if not dzień:
+		return []
 	if (dzień not in suroweDane):
 		return []
 	
-	if (len(suroweDane[dzień]) != 0):
-		return suroweDane[dzień]
-	return []
+	items = suroweDane.get(dzień, [])
+	if not items:
+		return []
+	
+	wynik: list[int] = []
+	for v in items:
+		# spróbuj skonwertować na int, w przeciwnym razie zachowaj jako string (ale preferencyjnie numeric)
+		try:
+			wynik.append(int(v))
+		except Exception:
+			try:
+				# usuń białe znaki i spróbuj jeszcze raz
+				wynik.append(int(str(v).strip()))
+			except Exception:
+				# w ostateczności dodaj jako string (zachowanie kompatybilności)
+				wynik.append(str(v))
+	return wynik

@@ -86,7 +86,7 @@ def ustaw(bot: discord.Client) -> None:
 				await interaction.response.send_message(embed=embed, ephemeral=True)
 				logujPolecenia(interaction, sukces=False, wiadomośćBłędu="Brak uprawnień.")
 				return
-			view = WidokGłówny(identyfikatorKanału=str(kanał.id), szkoła=szkoła, numerki=numerki == 1 and (konfiguracja.get("szkoły", {}).get(szkoła, {}).get("ma-numerki", {}) == "TAK"))
+			view = WidokGłówny(identyfikatorKanału=str(kanał.id), szkoła=szkoła, wysyłajNumerki=numerki == 1 and (konfiguracja.get("szkoły", {}).get(szkoła, {}).get("ma-numerki", {}) == "TAK"))
 			embed = discord.Embed(
 				title="**Skonfiguruj filtrowanie zastępstw**",
 				description=(

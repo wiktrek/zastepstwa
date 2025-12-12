@@ -17,6 +17,7 @@ import asyncio
 import discord
 
 # Wewnętrzne importy
+from src.handlers.numerki import wyślijNumerki
 from src.handlers.configuration import (
 	blokadaKonfiguracji,
 	konfiguracja
@@ -61,7 +62,15 @@ async def sprawdźAktualizacje(bot: discord.Client) -> None:
 					continue
 
 				zawartośćStrony = await pobierzZawartośćStrony(bot, url, kodowanie=(daneSzkoły or {}).get("kodowanie", "iso-8859-2"))
-				serweryDoSprawdzenia = [int(identyfikatorSerwera) for identyfikatorSerwera, konfiguracjaSerwera in serwery.items() if (konfiguracjaSerwera or {}).get("szkoła", "") == identyfikatorSzkoły]
+				serweryDoSprawdzenia = []
+				for identyfikatorSerwera, konfiguracjaSerwera in serwery.items():
+					if not isinstance(konfiguracjaSerwera, dict):
+						continue
+					if konfiguracjaSerwera.get("szkoła", "") == identyfikatorSzkoły:
+						try:
+							serweryDoSprawdzenia.append(int(identyfikatorSerwera))
+						except Exception:
+							continue
 
 				if not zawartośćStrony or not serweryDoSprawdzenia:
 					continue
@@ -148,6 +157,9 @@ async def sprawdźSerwery(
 
 				else:
 					await wyślijAktualizacje(kanał, identyfikatorSerwera, informacjeDodatkowe, aktualneWpisyZastępstw)
+				
+				if konfiguracjaSerwera.get("wysyłaj-numerki"):
+					await wyślijNumerki(kanał, identyfikatorSerwera, informacjeDodatkowe, konfiguracjaSerwera.get("szkoła", ""))
 
 				poprzedniLicznik = int(poprzednieDane.get("licznik-zastepstw", 0))
 

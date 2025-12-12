@@ -20,7 +20,7 @@ import discord
 # Wewnętrzne importy
 from src.classes.commands import WidokGłówny
 from src.classes.constants import Constants
-from src.handlers.configuration import konfiguracja
+from src.handlers.configuration import konfiguracja, blokadaKonfiguracji
 from src.helpers.helpers import pobierzSzczęśliweNumerkiNaDzień
 from src.handlers.logging import (
 	logiKonsoli,
@@ -53,11 +53,14 @@ def ustaw(bot: discord.Client) -> None:
 				title="**Szczęśliwe numerki**",
 				color=Constants.KOLOR
 			)
-			szczesliweNumerki = pobierzSzczęśliweNumerkiNaDzień("01", datetime.today().strftime('%d.%m'))
-			if len(szczesliweNumerki) != 0:
+			identyfikatorSerwera = str(interaction.guild.id) if interaction.guild else "01"
+			async with blokadaKonfiguracji:
+				szkola = konfiguracja.get("serwery", {}).get(identyfikatorSerwera, {}).get("szkoła", "01")
+			szczesliweNumerki = pobierzSzczęśliweNumerkiNaDzień(szkola, datetime.today().strftime('%d.%m'))
+			if szczesliweNumerki:
 				embed.add_field(
 					name="Numerki:",
-					value=(f"{", ".join(str(numerek) for numerek in szczesliweNumerki)}")
+					value=", ".join(str(numerek) for numerek in szczesliweNumerki)
 				)
 			else:
 				embed.add_field(

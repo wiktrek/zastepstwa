@@ -154,6 +154,7 @@ class WidokAkceptacjiSugestii(discord.ui.View):
 		wiadomość: discord.Message,
 		identyfikatorKanału: str,
 		szkoła: str,
+		wysyłajNumerki: bool,
 		timeout: float=120.0
 	) -> None:
 		super().__init__(timeout=timeout)
@@ -165,7 +166,7 @@ class WidokAkceptacjiSugestii(discord.ui.View):
 		self.wiadomość = wiadomość
 		self.identyfikatorKanału = identyfikatorKanału
 		self.szkoła = szkoła
-
+		self.wysyłajNumerki = wysyłajNumerki
 	@discord.ui.button(
 		label="Akceptuj sugestie",
 		style=discord.ButtonStyle.success
@@ -249,7 +250,8 @@ class ModalWybierania(discord.ui.Modal):
 		listaDoDopasowania: list[str],
 		wiadomość: discord.Message,
 		identyfikatorKanału: str,
-		szkoła: str
+		szkoła: str,
+		wysyłajNumerki: bool=False
 	) -> None:
 		super().__init__(title="Wprowadź dane do formularza")
 		self.typDanych = typDanych
@@ -257,6 +259,7 @@ class ModalWybierania(discord.ui.Modal):
 		self.wiadomość = wiadomość
 		self.identyfikatorKanału = identyfikatorKanału
 		self.szkoła = szkoła
+		self.wysyłajNumerki = bool(wysyłajNumerki)
 
 		if self.typDanych == "klasy":
 			label = "Wprowadź klasy (oddzielaj przecinkami)."
@@ -312,7 +315,7 @@ class ModalWybierania(discord.ui.Modal):
 					color=Constants.KOLOR
 				)
 				embed.set_footer(text=Constants.DŁUŻSZA_STOPKA)
-				view = WidokAkceptacjiSugestii(self.typDanych, identyfikatorSerwera, idealneDopasowania, sugestie, self.lista, self.wiadomość, self.identyfikatorKanału, self.szkoła)
+				view = WidokAkceptacjiSugestii(self.typDanych, identyfikatorSerwera, idealneDopasowania, sugestie, self.lista, self.wiadomość, self.identyfikatorKanału, self.szkoła, self.wysyłajNumerki)
 				await interaction.response.defer()
 				await self.wiadomość.edit(embed=embed, view=view)
 				return
@@ -323,7 +326,7 @@ class ModalWybierania(discord.ui.Modal):
 				kluczFiltru = "wybrani-nauczyciele"
 
 			finalne = usuńDuplikaty(idealneDopasowania)
-			await zapiszKluczeSerwera(identyfikatorSerwera, {"identyfikator-kanalu": self.identyfikatorKanału, "szkoła": self.szkoła, kluczFiltru: finalne})
+			await zapiszKluczeSerwera(identyfikatorSerwera, {"identyfikator-kanalu": self.identyfikatorKanału, "szkoła": self.szkoła, kluczFiltru: finalne, "wysyłaj-numerki": self.wysyłajNumerki})
 
 			embed = WidokPodsumowania.utwórz(str(interaction.guild.id))
 			await interaction.response.defer()
@@ -346,12 +349,14 @@ class PrzyciskUczeń(discord.ui.Button):
 	Attributes:
 		identyfikatorKanału (str): ID kanału tekstowego Discord, który został wybrany w opcjach polecenia.
 		szkoła (str): ID szkoły, której dane przeznacza się do wykorzystania.
+		wysyłajNumerki (bool): czy wysyłać numerki
 	"""
 
 	def __init__(
 		self,
 		identyfikatorKanału: str,
-		szkoła: str
+		szkoła: str,
+		wysyłajNumerki: bool=False
 	) -> None:
 		super().__init__(
 			label="Uczeń",
@@ -359,6 +364,7 @@ class PrzyciskUczeń(discord.ui.Button):
 		)
 		self.identyfikatorKanału = identyfikatorKanału
 		self.szkoła = szkoła
+		self.wysyłajNumerki = wysyłajNumerki
 
 	async def callback(
 		self,
@@ -375,7 +381,7 @@ class PrzyciskUczeń(discord.ui.Button):
 			await interaction.response.send_message(embed=embed, ephemeral=True)
 		else:
 			try:
-				await interaction.response.send_modal(ModalWybierania("klasy", listaKlas, interaction.message, self.identyfikatorKanału, self.szkoła))
+				await interaction.response.send_modal(ModalWybierania("klasy", listaKlas, interaction.message, self.identyfikatorKanału, self.szkoła, self.wysyłajNumerki))
 			except Exception as e:
 				logiKonsoli.exception(
 					f"Wystąpił błąd po naciśnięciu przycisku „Uczeń” dla użytkownika {interaction.user} (ID: {interaction.user.id}) na serwerze „{interaction.guild}” (ID: {interaction.guild.id}). Więcej informacji: {e}"
@@ -390,16 +396,17 @@ class PrzyciskUczeń(discord.ui.Button):
 class PrzyciskNauczyciel(discord.ui.Button):
 	"""
 	Przycisk umożliwiający użytkownikowi wprowadzenie nauczycieli w formularzu konfiguracji dla serwera Discord.
-
 	Attributes:
 		identyfikatorKanału (str): ID kanału tekstowego Discord, który został wybrany w opcjach polecenia.
 		szkoła (str): ID szkoły, której dane przeznacza się do wykorzystania.
+		wysyłajNumerki (bool): czy wysyłać numerki
 	"""
 
 	def __init__(
 		self,
 		identyfikatorKanału: str,
-		szkoła: str
+		szkoła: str,
+		wysyłajNumerki: bool=False
 	) -> None:
 		super().__init__(
 			label="Nauczyciel",
@@ -407,6 +414,7 @@ class PrzyciskNauczyciel(discord.ui.Button):
 		)
 		self.identyfikatorKanału = identyfikatorKanału
 		self.szkoła = szkoła
+		self.wysyłajNumerki = wysyłajNumerki
 
 	async def callback(
 		self,
@@ -423,7 +431,7 @@ class PrzyciskNauczyciel(discord.ui.Button):
 			await interaction.response.send_message(embed=embed, ephemeral=True)
 		else:
 			try:
-				await interaction.response.send_modal(ModalWybierania("nauczyciele", listaNauczycieli, interaction.message, self.identyfikatorKanału, self.szkoła))
+				await interaction.response.send_modal(ModalWybierania("nauczyciele", listaNauczycieli, interaction.message, self.identyfikatorKanału, self.szkoła, self.wysyłajNumerki))
 			except Exception as e:
 				logiKonsoli.exception(
 					f"Wystąpił błąd po naciśnięciu przycisku „Nauczyciel” dla użytkownika {interaction.user} (ID: {interaction.user.id}) na serwerze „{interaction.guild}” (ID: {interaction.guild.id}). Więcej informacji: {e}"
@@ -485,9 +493,9 @@ class WidokGłówny(discord.ui.View):
 		self,
 		identyfikatorKanału: str,
 		szkoła: str,
-		numerki: bool
+		wysyłajNumerki: bool
 	) -> None:
 		super().__init__()
-		self.add_item(PrzyciskUczeń(identyfikatorKanału, szkoła))
-		self.add_item(PrzyciskNauczyciel(identyfikatorKanału, szkoła))
+		self.add_item(PrzyciskUczeń(identyfikatorKanału, szkoła, wysyłajNumerki))
+		self.add_item(PrzyciskNauczyciel(identyfikatorKanału, szkoła, wysyłajNumerki))
 		self.add_item(PrzyciskWyczyśćFiltry())
