@@ -484,7 +484,8 @@ class WidokGłówny(discord.ui.View):
 	def __init__(
 		self,
 		identyfikatorKanału: str,
-		szkoła: str
+		szkoła: str,
+		numerki: bool
 	) -> None:
 		super().__init__()
 		self.add_item(PrzyciskUczeń(identyfikatorKanału, szkoła))

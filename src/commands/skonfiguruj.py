@@ -51,11 +51,22 @@ def ustaw(bot: discord.Client) -> None:
 			for identyfikatorSzkoły, nazwaSzkoły in konfiguracja.get("szkoły", {}).items()
 		]
 	)
-
+	@discord.app_commands.choices(numerki=[
+		discord.app_commands.Choice(
+			name="Tak",
+			value=1
+		),
+		discord.app_commands.Choice(
+			name="Nie",
+			value=0
+		),
+		]
+	)
 	async def skonfiguruj(
 		interaction: discord.Interaction,
 		szkoła: str,
-		kanał: discord.TextChannel
+		kanał: discord.TextChannel,
+		numerki: int
 	) -> None:
 		"""
 		Pozwala skonfigurować bota, dzięki opcjom wyboru szkoły, docelowego kanału tekstowego i filtracji zastępstw.
@@ -75,8 +86,7 @@ def ustaw(bot: discord.Client) -> None:
 				await interaction.response.send_message(embed=embed, ephemeral=True)
 				logujPolecenia(interaction, sukces=False, wiadomośćBłędu="Brak uprawnień.")
 				return
-
-			view = WidokGłówny(identyfikatorKanału=str(kanał.id), szkoła=szkoła)
+			view = WidokGłówny(identyfikatorKanału=str(kanał.id), szkoła=szkoła, numerki=numerki == 1 and (konfiguracja.get("szkoły", {}).get(szkoła, {}).get("ma-numerki", {}) == "TAK"))
 			embed = discord.Embed(
 				title="**Skonfiguruj filtrowanie zastępstw**",
 				description=(
@@ -88,9 +98,15 @@ def ustaw(bot: discord.Client) -> None:
 				),
 				color=Constants.KOLOR
 			)
+			if numerki == 1 and konfiguracja.get("szkoły", {}).get(szkoła, {}).get("ma-numerki", {}) == "NIE":
+				embed.add_field(
+					name="Twoja szkoła nie wspiera szczęśliwych numerków",
+					value="Twoja szkoła niestety nie otrzymuje aktualizacji dotyczących szczęśliwych numerków. Skontaktuj się z administratorem",
+					)
 			embed.set_footer(text=Constants.DŁUŻSZA_STOPKA)
 			await interaction.response.send_message(embed=embed, view=view)
 			logujPolecenia(interaction, sukces=True)
+
 		except Exception as e:
 			logujPolecenia(interaction, sukces=False, wiadomośćBłędu=str(e))
 			logiKonsoli.exception(
